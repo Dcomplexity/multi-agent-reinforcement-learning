@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
+
 
 def generateRandomFromDistribution (distribution):
     randomIndex = 0
@@ -188,8 +190,11 @@ def figureALearningBOneAction():
     plt.xlabel('timestep')
     plt.ylabel('probability')
 
-
+starttime = datetime.datetime.now()
 figureBothLearning()
 figureALearningBNS()
 figureALearningBOneAction()
+endtime = datetime.datetime.now()
+intervaltime = (endtime - starttime).seconds
 plt.show()
+print (intervaltime)
