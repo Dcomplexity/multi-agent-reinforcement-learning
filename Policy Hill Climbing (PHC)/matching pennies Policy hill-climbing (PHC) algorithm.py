@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
+
 
 def generateRandomFromDistribution (distribution):
     randomIndex = 0
@@ -105,3 +107,94 @@ def calReward (action_1, action_2):
         reward_1 = 1
         reward_2 = -1
     return (reward_1, reward_2)
+
+def figureBothLearning():
+    a = agent(initialStrategy=(0.8, 0.2))
+    b = agent(initialStrategy=(0.2, 0.8))
+    time = 0
+    aStrategyActionZero = []
+    aStrategyActionZero.append(a.strategy[0])
+    while (time < 1000000):
+        a.chooseAction()
+        actionA = a.getCurrentAction()
+        b.chooseAction()
+        actionB = b.getCurrentAction()
+        rewardA, rewardB = calReward(actionA, actionB)
+        a.setReward(rewardA)
+        b.setReward(rewardB)
+        a.updateActionValues()
+        b.updateActionValues()
+        a.updateStrategy()
+        b.updateStrategy()
+        a.updateTimeStep()
+        b.updateTimeStep()
+        a.updateEpsilon()
+        b.updateEpsilon()
+        a.updateAlpha()
+        b.updateAlpha()
+        time += 1
+        aStrategyActionZero.append(a.strategy[0])
+    plt.figure(1)
+    plt.plot(aStrategyActionZero)
+    plt.xlabel('timestep')
+    plt.ylabel('probability')
+
+def figureALearningBNS():
+    a = agent(initialStrategy=(0.2, 0.8))
+    b = agent(initialStrategy=(0.5, 0.5))
+    time = 0
+    aStrategyActionZero = []
+    aStrategyActionZero.append(a.strategy[0])
+    while (time < 1000000):
+        a.chooseAction()
+        actionA = a.getCurrentAction()
+        b.chooseActionWithFxiedStrategy()
+        actionB = b.getCurrentAction()
+        rewardA, rewardB = calReward(actionA, actionB)
+        a.setReward(rewardA)
+        a.updateActionValues()
+        a.updateStrategy()
+        a.updateTimeStep()
+        a.updateEpsilon()
+        a.updateAlpha()
+        time += 1
+        aStrategyActionZero.append(a.strategy[0])
+    plt.figure(2)
+    plt.plot(aStrategyActionZero)
+    plt.xlabel('timestep')
+    plt.ylabel('probability')
+
+
+def figureALearningBOneAction():
+    a = agent(initialStrategy=(0.2, 0.8))
+    b = agent(initialStrategy=(0.7, 0.3))
+    time = 0
+    aStrategyActionZero = []
+    aStrategyActionZero.append(a.strategy[0])
+    while (time < 10000):
+        a.chooseAction()
+        actionA = a.getCurrentAction()
+        b.chooseActionWithFxiedStrategy()
+        actionB = b.getCurrentAction()
+        rewardA, rewardB = calReward(actionA, actionB)
+        a.setReward(rewardA)
+        a.updateActionValues()
+        a.updateStrategy()
+        a.updateTimeStep()
+        a.updateEpsilon()
+        a.updateAlpha()
+        time += 1
+        aStrategyActionZero.append(a.strategy[0])
+    plt.figure(3)
+    plt.plot(aStrategyActionZero)
+    plt.xlabel('timestep')
+    plt.ylabel('probability')
+
+starttime = datetime.datetime.now()
+figureBothLearning()
+figureALearningBNS()
+figureALearningBOneAction()
+endtime = datetime.datetime.now()
+intervaltime = (endtime - starttime).seconds
+plt.show()
+print (intervaltime)

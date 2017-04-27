@@ -110,11 +110,11 @@ def calReward (action_1, action_2):
 
 def figureBothLearning():
     a = agent(initialStrategy=(0.8, 0.2))
-    b = agent(initialStrategy=(0.8, 0.2))
+    b = agent(initialStrategy=(0.2, 0.8))
     time = 0
     aStrategyActionZero = []
     aStrategyActionZero.append(a.strategy[0])
-    while (time < 100000):
+    while (time < 1000000):
         a.chooseAction()
         actionA = a.getCurrentAction()
         b.chooseAction()
@@ -167,7 +167,7 @@ def figureALearningBNS():
 
 def figureALearningBOneAction():
     a = agent(initialStrategy=(0.2, 0.8))
-    b = agent(initialStrategy=(1, 0.0))
+    b = agent(initialStrategy=(0.7, 0.3))
     time = 0
     aStrategyActionZero = []
     aStrategyActionZero.append(a.strategy[0])
