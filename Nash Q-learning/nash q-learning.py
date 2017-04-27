@@ -20,28 +20,28 @@ for i in range(0, WORLD_HEIGHT):
 
 actions = [ACTION_UP, ACTION_DOWN, ACTION_LEFT, ACTION_RIGHT]
 statesAllOne = []
-statesValidActions = {}
+locationValidActions = {}
 
 for i in permutations(gridIndex, 2):
     statesAllOne.append(i)
 
 for i in gridIndex:
-    statesValidActions[i] = []
+    locationValidActions[i] = []
 
 for i in range(0, WORLD_HEIGHT):
     for j in range(0, WORLD_WIDTH):
         gridIndexNumber = WORLD_WIDTH * i + j
         if i != WORLD_HEIGHT - 1:
-            statesValidActions[gridIndexNumber].append(ACTION_UP)
+            locationValidActions[gridIndexNumber].append(ACTION_UP)
         if i != 0:
-            statesValidActions[gridIndexNumber].append(ACTION_DOWN)
+            locationValidActions[gridIndexNumber].append(ACTION_DOWN)
         if j != 0:
-            statesValidActions[gridIndexNumber].append(ACTION_LEFT)
+            locationValidActions[gridIndexNumber].append(ACTION_LEFT)
         if j != WORLD_WIDTH - 1:
-            statesValidActions[gridIndexNumber].append(ACTION_RIGHT)
+            locationValidActions[gridIndexNumber].append(ACTION_RIGHT)
 
 class agent:
-    def __init__(self, agentIndex = 0):
+    def __init__(self, agentIndex = 0, startLocationIndex = 0):
         self.goalState = ()
         self.qTable = {}
         self.singleQValue = {}
@@ -49,30 +49,46 @@ class agent:
         self.nextState = ()
         self.strategy = {}
         self.agentIndex = agentIndex
+        self.locationIndex = startLocationIndex
+        self.currentAction = 0
 
     def initialSelfStrategy (self):
         for i in statesAllOne:
             self.strategy[i] = {}
-            for j in statesValidActions[i[self.agentIndex]]:
+            for j in locationValidActions[i[self.agentIndex]]:
                 self.strategy[i][j] = 0
 
     def initialSelfQTable (self):
         for i in statesAllOne:
             self.qTable[i] = {}
-            for j_1 in statesValidActions[i[0]]:
-                for j_2 in statesValidActions[i[1]]:
+            for j_1 in locationValidActions[i[0]]:
+                for j_2 in locationValidActions[i[1]]:
                     self.qTable[i][(j_1, j_2)] = 0
 
     def initialSingleQValue (self):
         for i in statesAllOne:
             self.singleQValue[i] = {}
-            for j in statesValidActions[i[self.agentIndex]]:
+            for j in locationValidActions[i[self.agentIndex]]:
                 self.singleQValue[i][j] = 0
+
+    def chooseActionWithEpsilon (self, EPSILON):
+        if np.random.binomial(1, self.EPSILON) == 1:
+            self.currentAction = np.random.choice(locationValidActions[self.locationIndex])
+        else:
+            self.currentAction = np.argmax(self.singleQValue[self.currentState])
+
+
+
+    def setCurrentState (self, opponentLocationIndex):
+        self.currentState = (self.locationIndex, opponentLocationIndex)
+
+    def setNextState (self, nextState):
+        self.nextState = nextState
 
     def singleQLearning (self, alpha, gamma):
         self.alpha = alpha
         self.gamma = gamma
-        
+
 
 
 
