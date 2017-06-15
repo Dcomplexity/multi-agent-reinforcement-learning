@@ -143,7 +143,7 @@ class agent:
                                                  + self.alpha * (agentReward + self.gamma * max(self.stateActionValues[nextState].values()))
     def updateStrategy (self, currentState):
         self.stateCount += 1.0
-        self.deltaWin = 1.0 / (1000 + self.timeStep / 10.0)  #notice the parameter settings
+        self.deltaWin = 1.0 / (1 + self.timeStep / 5000.0)  #notice the parameter settings
         self.deltaLose = 4.0 * self.deltaWin # reference to Multiagent Learning Using a Variable Learning Rate
         lengthOfAction = len(locationValidActions[currentState[self.agentIndex]])
         for j in locationValidActions[currentState[self.agentIndex]]:
@@ -184,8 +184,8 @@ class agent:
     def updateEpsilon (self):
         self.EPSILON = 0.5 / (1 + 0.0001 * self.timeStep)
 
-    def updateAlpha (self):
-        self.alpha = 1 / (10 + 0.002 * self.timeStep)
+    def updateAlpha (self): #notice the parameter alpha
+        self.alpha = 1 / (4 + 0.02 * self.timeStep)
 
 def nextGridIndex (action, gridIndex):
     action = action
