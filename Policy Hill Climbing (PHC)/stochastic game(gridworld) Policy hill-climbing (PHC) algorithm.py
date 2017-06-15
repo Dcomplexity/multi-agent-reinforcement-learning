@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import datetime
 from itertools import permutations
 import random
+import multiprocessing
 
 
 def generateRandomFromDistribution (distribution):
@@ -250,7 +251,7 @@ def playGameOne(agent_0 = agent, agent_1 = agent):
     agent_1.initialDeltaStateAction()
     agent_0.initialDeltaStateActionTop()
     agent_1.initialDeltaStateActionTop()
-    while episodes < 5000:
+    while episodes < 1000000:
         print (episodes)
         while True:
             agent0Action = agent_0.chooseAction(currentState)
@@ -293,10 +294,33 @@ def test (agent_0 = agent, agent_1 = agent):
 agent_0 = agent(agentIndex=0, startLocationIndex=0)
 agent_1 = agent(agentIndex=1, startLocationIndex=2)
 
-starttime = datetime.datetime.now()
-playGameOne(agent_0, agent_1)
-runGameResult = test(agent_0, agent_1)
-endtime = datetime.datetime.now()
-intervaltime = (endtime - starttime).seconds
-print (runGameResult)
-print (intervaltime)
+# starttime = datetime.datetime.now()
+# playGameOne(agent_0, agent_1)
+# runGameResult = test(agent_0, agent_1)
+# endtime = datetime.datetime.now()
+# intervaltime = (endtime - starttime).seconds
+# print (runGameResult)
+# print (intervaltime)
+
+def rungame (agent_0 = agent, agent_1 = agent):
+    agent_0 = agent_0
+    agent_1 = agent_1
+    playGameOne(agent_0, agent_1)
+    runGameResult = test(agent_0, agent_1)
+    return runGameResult
+
+if __name__ == "__main__":
+    # playGameOne(agent_0, agent_1)
+    pool = multiprocessing.Pool(processes=3)
+    agentActionList = []
+    for i in range(3):
+        agentActionList.append(pool.apply_async(rungame, (agent_0, agent_1)))
+    pool.close()
+    pool.join()
+
+    # print (agent_0.qTable[0][3, 6])
+    # print (agent_0.qTable[1][3, 6])
+    # print (agent_1.qTable[0][8, 5])
+    # print (agent_1.qTable[1][8, 5])
+    for res in agentActionList:
+        print (res.get())

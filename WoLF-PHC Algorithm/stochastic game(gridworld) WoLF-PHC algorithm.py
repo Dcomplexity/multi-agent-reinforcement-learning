@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import datetime
 from itertools import permutations
 import random
+import multiprocessing
 
 
 def generateRandomFromDistribution (distribution):
@@ -83,6 +84,8 @@ class agent:
             lengthOfAction = len(locationValidActions[i[self.agentIndex]])
             for j in locationValidActions[i[self.agentIndex]]:
                 self.averageStrategy[i][j] = 1 / lengthOfAction
+        self.sumActionValue = {}
+        self.sumAverageActionValue = {}
         # self.actionRewards = np.zeros((2))
         # self.currentActionIndex = 0
         # self.nextActionIndex = 0
@@ -140,12 +143,20 @@ class agent:
                                                  + self.alpha * (agentReward + self.gamma * max(self.stateActionValues[nextState].values()))
     def updateStrategy (self, currentState):
         self.stateCount += 1.0
-        self.deltaWin = 1.0 / (20000 + self.timeStep)
-        self.deltaLose = 2.0 * self.deltaWin
+        self.deltaWin = 1.0 / (1000 + self.timeStep / 10.0)  #notice the parameter settings
+        self.deltaLose = 4.0 * self.deltaWin # reference to Multiagent Learning Using a Variable Learning Rate
         lengthOfAction = len(locationValidActions[currentState[self.agentIndex]])
         for j in locationValidActions[currentState[self.agentIndex]]:
             self.averageStrategy[currentState][j] += (1.0 / self.stateCount) * (self.strategy[currentState][j] - self.averageStrategy[currentState][j])
-
+        self.sumActionValue[currentState] = 0.0
+        self.sumAverageActionValue[currentState] = 0.0
+        for j in locationValidActions[currentState[self.agentIndex]]:
+            self.sumActionValue[currentState] += self.strategy[currentState][j] * self.stateActionValues[currentState][j]
+            self.sumAverageActionValue[currentState] += self.averageStrategy[currentState][j] * self.stateActionValues[currentState][j]
+        if self.sumActionValue[currentState] > self.sumAverageActionValue[currentState]:
+            self.delta = self.deltaWin
+        else:
+            self.delta = self.deltaLose
 
         maxAction = max(self.stateActionValues[currentState], key=lambda x:self.stateActionValues[currentState][x])
         for j in locationValidActions[currentState[self.agentIndex]]:
@@ -266,7 +277,7 @@ def playGameOne(agent_0 = agent, agent_1 = agent):
     agent_1.initialDeltaStateAction()
     agent_0.initialDeltaStateActionTop()
     agent_1.initialDeltaStateActionTop()
-    while episodes < 5000:
+    while episodes < 500000: #notice the episodes time, it need enough long time to train
         print (episodes)
         while True:
             agent0Action = agent_0.chooseAction(currentState)
@@ -309,10 +320,33 @@ def test (agent_0 = agent, agent_1 = agent):
 agent_0 = agent(agentIndex=0, startLocationIndex=0)
 agent_1 = agent(agentIndex=1, startLocationIndex=2)
 
-starttime = datetime.datetime.now()
-playGameOne(agent_0, agent_1)
-runGameResult = test(agent_0, agent_1)
-endtime = datetime.datetime.now()
-intervaltime = (endtime - starttime).seconds
-print (runGameResult)
-print (intervaltime)
+# starttime = datetime.datetime.now()
+# playGameOne(agent_0, agent_1)
+# runGameResult = test(agent_0, agent_1)
+# endtime = datetime.datetime.now()
+# intervaltime = (endtime - starttime).seconds
+# print (runGameResult)
+# print (intervaltime)
+
+def rungame (agent_0 = agent, agent_1 = agent):
+    agent_0 = agent_0
+    agent_1 = agent_1
+    playGameOne(agent_0, agent_1)
+    runGameResult = test(agent_0, agent_1)
+    return runGameResult
+
+if __name__ == "__main__":
+    # playGameOne(agent_0, agent_1)
+    pool = multiprocessing.Pool(processes=3)
+    agentActionList = []
+    for i in range(3):
+        agentActionList.append(pool.apply_async(rungame, (agent_0, agent_1)))
+    pool.close()
+    pool.join()
+
+    # print (agent_0.qTable[0][3, 6])
+    # print (agent_0.qTable[1][3, 6])
+    # print (agent_1.qTable[0][8, 5])
+    # print (agent_1.qTable[1][8, 5])
+    for res in agentActionList:
+        print (res.get())
