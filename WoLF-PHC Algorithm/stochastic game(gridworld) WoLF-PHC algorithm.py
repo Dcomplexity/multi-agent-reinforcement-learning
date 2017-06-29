@@ -223,7 +223,7 @@ def gridGameOne(action_0, action_1, currentState):
     elif (nextIndex_0 == 8 and nextIndex_1 != 6):
         reward_0 = 100# maybe there is a difference between 100 and 50, after I adopt the parameter, the resutl will always converge to (8, 6)
                 # and do not appear (8, 5) and (3, 6)
-        reward_1 = 0
+        reward_1 = -1
         nextState = (nextIndex_0, nextIndex_1)
         endGameFlag = 1
         # if (nextIndex_1 == 8):
@@ -233,7 +233,7 @@ def gridGameOne(action_0, action_1, currentState):
         #     reward_1 = 0
         #     nextState = (nextIndex_0, nextIndex_1)
     elif (nextIndex_0 != 8 and nextIndex_1 == 6):
-        reward_0 = 0
+        reward_0 = -1
         reward_1 = 100
         nextState = (nextIndex_0, nextIndex_1)
         endGameFlag = 1
@@ -244,13 +244,13 @@ def gridGameOne(action_0, action_1, currentState):
         #     reward_0 = 0
         #     nextState = (nextIndex_0, nextIndex_1)
     elif (nextIndex_0 != 8 and nextIndex_1 != 6 and nextIndex_0 == nextIndex_1):
-        reward_0 = -1
-        reward_1 = -1
+        reward_0 = -10
+        reward_1 = -10
         nextState = (currentIndex_0, currentIndex_1)
         endGameFlag = 0
     else:
-        reward_0 = 0
-        reward_1 = 0
+        reward_0 = -1
+        reward_1 = -1
         nextState = (nextIndex_0, nextIndex_1)
         endGameFlag = 0
     return reward_0, reward_1, nextState, endGameFlag
@@ -337,9 +337,9 @@ def rungame (agent_0 = agent, agent_1 = agent):
 
 if __name__ == "__main__":
     # playGameOne(agent_0, agent_1)
-    pool = multiprocessing.Pool(processes=3)
+    pool = multiprocessing.Pool(processes=20)
     agentActionList = []
-    for i in range(3):
+    for i in range(20):
         agentActionList.append(pool.apply_async(rungame, (agent_0, agent_1)))
     pool.close()
     pool.join()
