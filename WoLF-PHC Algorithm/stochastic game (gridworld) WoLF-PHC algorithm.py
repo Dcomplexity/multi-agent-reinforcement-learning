@@ -39,8 +39,8 @@ locationValidActions = {}
 for i in permutations(gridIndexList, 2):
     statesAllOne.append(i)
 
-#In gridworld with barrier, the agent's target in 7
-statesAllOne.append((7, 7))
+statesAllOne.append((8, 8))
+statesAllOne.append((6, 6))
 
 for i in  gridIndexList:
     locationValidActions[i] = []
@@ -75,6 +75,17 @@ class agent:
         self.deltaStateActionTop = {}
         self.delta = delta
         self.EPSILON = 0.5 / (1 + 0.0001 * self.timeStep)
+        self.stateCount = {}
+        self.deltaWin = 0.0
+        self.deltaLose = 0.0
+        self.averageStrategy = {}
+        for i in statesAllOne:
+            self.averageStrategy[i] = {}
+            lengthOfAction = len(locationValidActions[i[self.agentIndex]])
+            for j in locationValidActions[i[self.agentIndex]]:
+                self.averageStrategy[i][j] = 1 / lengthOfAction
+        self.sumActionValue = {}
+        self.sumAverageActionValue = {}
         # self.actionRewards = np.zeros((2))
         # self.currentActionIndex = 0
         # self.nextActionIndex = 0
@@ -98,6 +109,10 @@ class agent:
             for j in locationValidActions[i[self.agentIndex]]:
                 self.stateActionValues[i][j] = 0
 
+    def initialStateCount(self):
+        for i in statesAllOne:
+            self.stateCount[i] = 0
+
     def initialDeltaStateAction (self):
         for i in statesAllOne:
             self.deltaStateAction[i] = {}
@@ -110,8 +125,11 @@ class agent:
             for j in locationValidActions[i[self.agentIndex]]:
                 self.deltaStateActionTop[i][j] = 0
 
-    def chooseAction (self, currentState):
-        if np.random.binomial(1, self.EPSILON) == 1:
+    # when agent choose action, there are two options:
+    # 1: chooseActionEpsilon = self.EPSILON, which means exploration-exploition method
+    # 2: chooseActionEpsilon = 0, which means np.random.binomial(1, chooseActionEpsilon) == 0, will only choose the most probability action.
+    def chooseAction (self, currentState, chooseActionEpsilon):
+        if np.random.binomial(1, chooseActionEpsilon) == 1:
             self.currentAction = random.choice(locationValidActions[currentState[self.agentIndex]])
         else:
             actionProbabilityList = list(self.strategy[currentState].values())
@@ -131,8 +149,23 @@ class agent:
         self.stateActionValues[currentState][self.currentAction] = (1 - self.alpha) * self.stateActionValues[currentState][self.currentAction] \
                                                  + self.alpha * (agentReward + self.gamma * max(self.stateActionValues[nextState].values()))
     def updateStrategy (self, currentState):
-        maxAction = max(self.stateActionValues[currentState], key=lambda x:self.stateActionValues[currentState][x])
+        self.stateCount[currentState] += 1.0
+        self.deltaWin = 1.0 / (1 + self.timeStep / 5000.0)  #notice the parameter settings
+        self.deltaLose = 4.0 * self.deltaWin # reference to Multiagent Learning Using a Variable Learning Rate
         lengthOfAction = len(locationValidActions[currentState[self.agentIndex]])
+        for j in locationValidActions[currentState[self.agentIndex]]:
+            self.averageStrategy[currentState][j] += (1.0 / self.stateCount[currentState]) * (self.strategy[currentState][j] - self.averageStrategy[currentState][j])
+        self.sumActionValue[currentState] = 0.0
+        self.sumAverageActionValue[currentState] = 0.0
+        for j in locationValidActions[currentState[self.agentIndex]]:
+            self.sumActionValue[currentState] += self.strategy[currentState][j] * self.stateActionValues[currentState][j]
+            self.sumAverageActionValue[currentState] += self.averageStrategy[currentState][j] * self.stateActionValues[currentState][j]
+        if self.sumActionValue[currentState] > self.sumAverageActionValue[currentState]:
+            self.delta = self.deltaWin
+        else:
+            self.delta = self.deltaLose
+
+        maxAction = max(self.stateActionValues[currentState], key=lambda x:self.stateActionValues[currentState][x])
         for j in locationValidActions[currentState[self.agentIndex]]:
             self.deltaStateAction[currentState][j] = min([self.strategy[currentState][j], self.delta / (lengthOfAction - 1)])
         sumDeltaStateAction = 0
@@ -158,8 +191,8 @@ class agent:
     def updateEpsilon (self):
         self.EPSILON = 0.5 / (1 + 0.0001 * self.timeStep)
 
-    def updateAlpha (self):
-        self.alpha = 1 / (10 + 0.002 * self.timeStep)
+    def updateAlpha (self): #notice the parameter alpha
+        self.alpha = 1 / (10 + 0.02 * self.timeStep)
 
 def nextGridIndex (action, gridIndex):
     action = action
@@ -186,25 +219,15 @@ def gridGameOne(action_0, action_1, currentState):
 
     currentIndex_0 = currentState[0]
     currentIndex_1 = currentState[1]
-    nextIndex_0 = nextGridIndex(action_0, currentIndex_0)
-    nextIndex_1 = nextGridIndex(action_1, currentIndex_1)
+    nextIndex_0 = nextGridIndex(action_0, currentState[0])
+    nextIndex_1 = nextGridIndex(action_1, currentState[1])
 
-    if currentIndex_0 == 0 or currentIndex_0 == 2:
-        if action_0 == 0:
-            if random.uniform(0, 1) < 0.5:
-                nextIndex_0 = currentIndex_0
-
-    if currentIndex_1 == 0 or currentIndex_1 == 2:
-        if action_1 == 0:
-            if random.uniform(0, 1) < 0.5:
-                nextIndex_1 = currentIndex_1
-
-    if (nextIndex_0 == 7 and nextIndex_1 == 7):
+    if (nextIndex_0 == 8 and nextIndex_1 == 6):
         reward_0 = 100
         reward_1 = 100
         nextState = (nextIndex_0, nextIndex_1)
         endGameFlag = 1
-    elif (nextIndex_0 == 7 and nextIndex_1 != 7):
+    elif (nextIndex_0 == 8 and nextIndex_1 != 6):
         reward_0 = 100# maybe there is a difference between 100 and 50, after I adopt the parameter, the resutl will always converge to (8, 6)
                 # and do not appear (8, 5) and (3, 6)
         reward_1 = -1
@@ -216,7 +239,7 @@ def gridGameOne(action_0, action_1, currentState):
         # else:
         #     reward_1 = 0
         #     nextState = (nextIndex_0, nextIndex_1)
-    elif (nextIndex_0 != 7 and nextIndex_1 == 7):
+    elif (nextIndex_0 != 8 and nextIndex_1 == 6):
         reward_0 = -1
         reward_1 = 100
         nextState = (nextIndex_0, nextIndex_1)
@@ -227,7 +250,7 @@ def gridGameOne(action_0, action_1, currentState):
         # else:
         #     reward_0 = 0
         #     nextState = (nextIndex_0, nextIndex_1)
-    elif (nextIndex_0 != 7 and nextIndex_1 != 7 and nextIndex_0 == nextIndex_1):
+    elif (nextIndex_0 != 8 and nextIndex_1 != 6 and nextIndex_0 == nextIndex_1):
         reward_0 = -10
         reward_1 = -10
         nextState = (currentIndex_0, currentIndex_1)
@@ -240,9 +263,9 @@ def gridGameOne(action_0, action_1, currentState):
     return reward_0, reward_1, nextState, endGameFlag
 
 def resetStartState():
-    agent_0LocationIndex = np.random.choice([x for x in gridIndexList if x not in [7]])
+    agent_0LocationIndex = np.random.choice([x for x in gridIndexList if x not in [8]])
     while True:
-        agent_1LocationIndex = np.random.choice([x for x in gridIndexList if x not in [7]])
+        agent_1LocationIndex = np.random.choice([x for x in gridIndexList if x not in [6]])
         if agent_1LocationIndex != agent_0LocationIndex:
             break
     return (agent_0LocationIndex, agent_1LocationIndex)
@@ -257,15 +280,17 @@ def playGameOne(agent_0 = agent, agent_1 = agent):
     agent_1.initialSelfStrategy()
     agent_0.initialActionValues()
     agent_1.initialActionValues()
+    agent_0.initialStateCount()
+    agent_1.initialStateCount()
     agent_0.initialDeltaStateAction()
     agent_1.initialDeltaStateAction()
     agent_0.initialDeltaStateActionTop()
     agent_1.initialDeltaStateActionTop()
-    while episodes < 1000000:
+    while episodes < 500000: #notice the episodes time, it need enough long time to train
         print (episodes)
         while True:
-            agent0Action = agent_0.chooseAction(currentState)
-            agent1Action = agent_1.chooseAction(currentState)
+            agent0Action = agent_0.chooseAction(currentState, agent_0.EPSILON)
+            agent1Action = agent_1.chooseAction(currentState, agent_1.EPSILON)
             reward_0, reward_1, nextState, endGameFlag = gridGameOne(agent0Action, agent1Action, currentState)
             agent_0.updateActionValues(currentState, nextState, reward_0)
             agent_1.updateActionValues(currentState, nextState, reward_1)
@@ -293,8 +318,8 @@ def test (agent_0 = agent, agent_1 = agent):
     currentState = startState
     endGameFlag = 0
     while endGameFlag != 1:
-        agent0Action = agent_0.chooseAction(currentState)
-        agent1Action = agent_1.chooseAction(currentState)
+        agent0Action = agent_0.chooseAction(currentState, 0)
+        agent1Action = agent_1.chooseAction(currentState, 0)
         agentActionList.append([agent0Action, agent1Action])
         reward_0, reward_1, nextState, endGameFlag = gridGameOne(agent0Action, agent1Action, currentState)
         currentState = nextState
